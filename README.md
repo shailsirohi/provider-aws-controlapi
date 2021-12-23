@@ -1,13 +1,13 @@
-# orchestration-provider
+# provider-aws-controlapi
 
-`orchestration-template` is a minimal [Crossplane](https://crossplane.io/) Provider
-that is meant to be used as a template for implementing new Providers. It comes
+`provider-aws-controlapi` is a crossplane aws provider based on recently release aws cloud control api. It comes
 with the following features that are meant to be refactored:
 
-- A `ProviderConfig` type that only points to a credentials `Secret`.
-- An `Environment` resource type that serves as an example managed resource.
-- A managed resource controller that reconciles `Environment` objects and simply
-  prints their configuration in its `Observe` method.
+- A `ProviderConfig` type that is used to store base 64 encoded AWS secret and access key.
+- A `S3` resource type that serves as an example managed resource.
+- A managed resource controller that reconciles `S3` objects
+
+It is based on crossplane provider-template, however all the libraries including kubebuilder has been updated to latest version.
 
 ## Developing
 
