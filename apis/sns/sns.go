@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package application contains group application API versions
-package application
+// Package sns contains group sns API versions
+package sns
