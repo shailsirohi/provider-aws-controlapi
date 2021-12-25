@@ -20,15 +20,15 @@ package apis
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 
-	environmentv1alpha1 "orchestration-provider/apis/application/v1alpha1"
-	orchestrationv1alpha1 "orchestration-provider/apis/v1alpha1"
+	snsv1alpha1 "provider-aws-controlapi/apis/sns/v1alpha1"
+	awsv1alpha1 "provider-aws-controlapi/apis/v1alpha1"
 )
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
 	AddToSchemes = append(AddToSchemes,
-		orchestrationv1alpha1.SchemeBuilder.AddToScheme,
-		environmentv1alpha1.SchemeBuilder.AddToScheme,
+		snsv1alpha1.SchemeBuilder.AddToScheme,
+		awsv1alpha1.SchemeBuilder.AddToScheme,
 	)
 }
 

@@ -26,7 +26,7 @@ import (
 //TopicParameters are the configurable fields of an Topic.
 type TopicParameters struct {
 	Region string `json:"region"`
-	DeliveryPolicy *string `json:"deliveryPolicy"`
+	DeliveryPolicy *string `json:"deliveryPolicy,omitempty"`
 	DisplayName *string `json:"displayName,omitempty"`
 	Policy *string `json:"policy,omitempty"`
 	FifoTopic *bool `json:"fifoTopic,omitempty"`
@@ -37,7 +37,14 @@ type TopicParameters struct {
 
 //TopicObservation are the observable fields of an Topic.
 type TopicObservation struct {
+	//TopicArn is the ARN for created topic
 	TopicArn string `json:"topicArn,omitempty"`
+
+	// CreatedTimestamp is the time when the topic was created
+	CreatedTimestamp *metav1.Time `json:"createdTimestamp,omitempty"`
+
+	// LastModifiedTimestamp - Returns the time when the topic was last changed.
+	LastModifiedTimestamp *metav1.Time `json:"lastModifiedTimestamp,omitempty"`
 }
 
 
@@ -80,7 +87,7 @@ type TopicList struct {
 	Items []Topic `json:"items"`
 }
 
-// Environment type metadata.
+// Topic type metadata.
 var (
 	TopicKind             = reflect.TypeOf(Topic{}).Name()
 	TopicGroupKind        = schema.GroupKind{Group: Group, Kind: TopicKind}.String()
