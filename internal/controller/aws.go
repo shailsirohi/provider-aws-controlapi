@@ -18,8 +18,8 @@ package controller
 
 import (
 	"k8s.io/client-go/util/workqueue"
-	"orchestration-provider/internal/controller/config"
-	"orchestration-provider/internal/controller/environment"
+	"provider-aws-controlapi/internal/controller/config"
+	"provider-aws-controlapi/internal/controller/sns"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -32,7 +32,7 @@ import (
 func Setup(mgr ctrl.Manager, l logging.Logger, wl workqueue.RateLimiter) error {
 	for _, setup := range []func(ctrl.Manager, logging.Logger, workqueue.RateLimiter) error{
 		config.Setup,
-		environment.Setup,
+		sns.Setup,
 	} {
 		if err := setup(mgr, l, wl); err != nil {
 			return err

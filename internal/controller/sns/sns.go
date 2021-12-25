@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package environment
+package sns
 
 import (
 	"context"
 	"fmt"
-	apisv1alpha1 "github.com/crossplane/provider-template/apis/v1alpha1"
-	v1alpha1 "orchestration-provider/apis/application/v1alpha1"
+	configv1alpha1 "provider-aws-controlapi/apis/v1alpha1"
+	snsv1alpha1 "provider-aws-controlapi/apis/sns/v1alpha1"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -56,17 +56,17 @@ var (
 
 // Setup adds a controller that reconciles MyType managed resources.
 func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := managed.ControllerName(v1alpha1.EnvironmentGroupKind)
+	name := managed.ControllerName(snsv1alpha1.TopicGroupKind)
 
 	o := controller.Options{
 		RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
 	}
 
 	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1alpha1.EnvironmentGroupVersionKind),
+		resource.ManagedKind(snsv1alpha1.TopicGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
 			kube:         mgr.GetClient(),
-			usage:        resource.NewProviderConfigUsageTracker(mgr.GetClient(), &apisv1alpha1.ProviderConfigUsage{}),
+			usage:        resource.NewProviderConfigUsageTracker(mgr.GetClient(), &configv1alpha1.ProviderConfigUsage{}),
 			newServiceFn: newNoOpService}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
@@ -74,7 +74,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(o).
-		For(&v1alpha1.Environment{}).
+		For(&snsv1alpha1.Topic{}).
 		Complete(r)
 }
 
@@ -92,7 +92,7 @@ type connector struct {
 // 3. Getting the credentials specified by the ProviderConfig.
 // 4. Using the credentials to form a client.
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	cr, ok := mg.(*v1alpha1.Environment)
+	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
 		return nil, errors.New(errNotMyType)
 	}
@@ -101,7 +101,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.Wrap(err, errTrackPCUsage)
 	}
 
-	pc := &apisv1alpha1.ProviderConfig{}
+	pc := &configv1alpha1.ProviderConfig{}
 	if err := c.kube.Get(ctx, types.NamespacedName{Name: cr.GetProviderConfigReference().Name}, pc); err != nil {
 		return nil, errors.Wrap(err, errGetPC)
 	}
@@ -129,7 +129,7 @@ type external struct {
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha1.Environment)
+	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotMyType)
 	}
@@ -155,7 +155,7 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 }
 
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha1.Environment)
+	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotMyType)
 	}
@@ -170,7 +170,7 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha1.Environment)
+	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotMyType)
 	}
@@ -185,7 +185,7 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha1.Environment)
+	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
 		return errors.New(errNotMyType)
 	}
