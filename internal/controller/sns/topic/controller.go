@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package sns
+package topic
 
 import (
 	"context"
 	"fmt"
-	configv1alpha1 "provider-aws-controlapi/apis/v1alpha1"
 	snsv1alpha1 "provider-aws-controlapi/apis/sns/v1alpha1"
+	configv1alpha1 "provider-aws-controlapi/apis/v1alpha1"
+	"time"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,8 +35,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-
-
 )
 
 const (
@@ -54,8 +53,8 @@ var (
 	newNoOpService = func(_ []byte) (interface{}, error) { return &NoOpService{}, nil }
 )
 
-// Setup adds a controller that reconciles MyType managed resources.
-func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+// SetupTopic adds a controller that reconciles Topic managed resources.
+func SetupTopic(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll  time.Duration) error {
 	name := managed.ControllerName(snsv1alpha1.TopicGroupKind)
 
 	o := controller.Options{

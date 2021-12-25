@@ -19,22 +19,21 @@ package controller
 import (
 	"k8s.io/client-go/util/workqueue"
 	"provider-aws-controlapi/internal/controller/config"
-	"provider-aws-controlapi/internal/controller/sns"
+	"provider-aws-controlapi/internal/controller/sns/topic"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
-
-
 )
 
 // Setup creates all Template controllers with the supplied logger and adds them to
 // the supplied manager.
-func Setup(mgr ctrl.Manager, l logging.Logger, wl workqueue.RateLimiter) error {
-	for _, setup := range []func(ctrl.Manager, logging.Logger, workqueue.RateLimiter) error{
+func Setup(mgr ctrl.Manager, l logging.Logger, wl workqueue.RateLimiter, poll time.Duration) error {
+	for _, setup := range []func(ctrl.Manager, logging.Logger, workqueue.RateLimiter, time.Duration) error{
 		config.Setup,
-		sns.Setup,
+		topic.SetupTopic,
 	} {
-		if err := setup(mgr, l, wl); err != nil {
+		if err := setup(mgr, l, wl,poll); err != nil {
 			return err
 		}
 	}
