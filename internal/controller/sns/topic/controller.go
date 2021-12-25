@@ -38,12 +38,19 @@ import (
 )
 
 const (
-	errNotMyType    = "managed resource is not a MyType custom resource"
-	errTrackPCUsage = "cannot track ProviderConfig usage"
-	errGetPC        = "cannot get ProviderConfig"
-	errGetCreds     = "cannot get credentials"
-
-	errNewClient = "cannot create new Service"
+	errNotTopic    				= "managed resource is not a Topic custom resource"
+	errKubeUpdateFailed         = "cannot update Topic custom resource"
+	errCreateFailed             = "cannot create Topic"
+	errDeleteFailed             = "cannot delete Queue"
+	errGetQueueAttributesFailed = "cannot get Queue attributes"
+	errTag                      = "cannot tag Queue"
+	errGetQueueURLFailed        = "cannot get Queue URL"
+	errListQueueTagsFailed      = "cannot list Queue tags"
+	errUpdateFailed             = "failed to update the Queue resource"
+	errTrackPCUsage 			= "cannot track ProviderConfig usage"
+	errGetPC        			= "cannot get ProviderConfig"
+	errGetCreds     			= "cannot get credentials"
+	errNewClient 				= "cannot create new Service"
 )
 
 // A NoOpService does nothing.
