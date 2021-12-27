@@ -1,4 +1,4 @@
-apiVersion: sns.orchestrator.crossplane.io/v1alpha1
+apiVersion: sns.orchestrator.crossplane.io/v1beta1
 kind: Environment
 metadata:
   name: example

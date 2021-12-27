@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 	snsv1alpha1 "provider-aws-controlapi/apis/sns/v1alpha1"
-	configv1alpha1 "provider-aws-controlapi/apis/v1alpha1"
+	configv1alpha1 "provider-aws-controlapi/apis/v1beta1"
 	"time"
 
 	"github.com/pkg/errors"
@@ -41,11 +41,10 @@ const (
 	errNotTopic    				= "managed resource is not a Topic custom resource"
 	errKubeUpdateFailed         = "cannot update Topic custom resource"
 	errCreateFailed             = "cannot create Topic"
-	errDeleteFailed             = "cannot delete Queue"
-	errGetQueueAttributesFailed = "cannot get Queue attributes"
-	errTag                      = "cannot tag Queue"
-	errGetQueueURLFailed        = "cannot get Queue URL"
-	errListQueueTagsFailed      = "cannot list Queue tags"
+	errDeleteFailed             = "cannot delete Topic"
+	errGetTopicAttributesFailed = "cannot get Topic attributes"
+	errTag                      = "cannot tag Topic"
+	errListTopicTagsFailed      = "cannot list Topic tags"
 	errUpdateFailed             = "failed to update the Queue resource"
 	errTrackPCUsage 			= "cannot track ProviderConfig usage"
 	errGetPC        			= "cannot get ProviderConfig"
@@ -100,7 +99,7 @@ type connector struct {
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
-		return nil, errors.New(errNotMyType)
+		return nil, errors.New(errNotTopic)
 	}
 
 	if err := c.usage.Track(ctx, mg); err != nil {
@@ -137,7 +136,7 @@ type external struct {
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
-		return managed.ExternalObservation{}, errors.New(errNotMyType)
+		return managed.ExternalObservation{}, errors.New(errNotTopic)
 	}
 
 	// These fmt statements should be removed in the real implementation.
@@ -163,7 +162,7 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errNotMyType)
+		return managed.ExternalCreation{}, errors.New(errNotTopic)
 	}
 
 	fmt.Printf("Creating: %+v", cr)
@@ -178,7 +177,7 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
-		return managed.ExternalUpdate{}, errors.New(errNotMyType)
+		return managed.ExternalUpdate{}, errors.New(errNotTopic)
 	}
 
 	fmt.Printf("Updating: %+v", cr)
@@ -193,7 +192,7 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
-		return errors.New(errNotMyType)
+		return errors.New(errNotTopic)
 	}
 
 	fmt.Printf("Deleting: %+v", cr)

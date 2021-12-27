@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha1 contains the v1alpha1 group Sample resources of the Template provider.
+// Package v1beta1 contains the v1beta1 group Sample resources of the Template provider.
 // +kubebuilder:object:generate=true
 // +groupName=sns.awscontrolapi.crossplane.io
-// +versionName=v1alpha1
+// +versionName=v1beta1
 package v1alpha1
 
 import (
@@ -28,7 +28,7 @@ import (
 // Package type metadata.
 const (
 	Group   = "sns.awscontrolapi.crossplane.io"
-	Version = "v1alpha1"
+	Version = "v1beta1"
 )
 
 var (
