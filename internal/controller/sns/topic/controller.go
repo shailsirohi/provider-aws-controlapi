@@ -130,11 +130,11 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		TopicArn: aws.String(meta.GetExternalName(cr)),
 	})
 
+	snsAttributes.Attributes[]
+
+
 	if err != nil {
-		var tnfe *awssnstypes.ResourceNotFoundException
-		if errors.As(err,&tnfe){
-			return managed.ExternalObservation{}, awsclient.Wrap(resource.Ignore(sns.IsNotFound, err), errGetQueueURLFailed)
-		}
+		return managed.ExternalObservation{}, awsclient.Wrap(resource.Ignore(sns.IsNotFound, err), errGetTopicAttributesFailed)
 	}
 
 	// These fmt statements should be removed in the real implementation.

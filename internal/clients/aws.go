@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/aws/smithy-go"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"gopkg.in/ini.v1"
@@ -283,5 +284,19 @@ func LateInitializeStringPtr(in *string, from *string) *string {
 	return from
 }
 
+// Wrap will remove the request-specific information from the error and only then
+// wrap it.
+func Wrap(err error, msg string) error {
+	// NOTE(muvaf): nil check is done for performance, otherwise errors.As makes
+	// a few reflection calls before returning false, letting awsErr be nil.
+	if err == nil {
+		return nil
+	}
+	var awsErr smithy.APIError
+	if errors.As(err, &awsErr) {
+		return errors.Wrap(awsErr, msg)
+	}
+	return errors.Wrap(err, msg)
+}
 
 
