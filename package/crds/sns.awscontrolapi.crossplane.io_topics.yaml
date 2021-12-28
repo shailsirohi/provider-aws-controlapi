@@ -143,6 +143,8 @@ spec:
                       topic was last changed.
                     format: date-time
                     type: string
+                  lastRequestToken:
+                    type: string
                   topicArn:
                     description: TopicArn is the ARN for created topic
                     type: string

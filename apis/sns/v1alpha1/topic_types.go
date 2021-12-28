@@ -40,6 +40,8 @@ type TopicObservation struct {
 	//TopicArn is the ARN for created topic
 	TopicArn string `json:"topicArn,omitempty"`
 
+	LastRequestToken *string `json:"lastRequestToken,omitempty"`
+
 	// CreatedTimestamp is the time when the topic was created
 	CreatedTimestamp *metav1.Time `json:"createdTimestamp,omitempty"`
 

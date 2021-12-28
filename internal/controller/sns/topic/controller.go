@@ -19,12 +19,16 @@ package topic
 import (
 	"context"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	snsv1alpha1 "provider-aws-controlapi/apis/sns/v1alpha1"
-	configv1alpha1 "provider-aws-controlapi/apis/v1beta1"
+	awsclient "provider-aws-controlapi/internal/clients"
+	awssns "github.com/aws/aws-sdk-go-v2/service/sns"
+	awssnstypes "github.com/aws/aws-sdk-go-v2/service/sns/types"
+	"provider-aws-controlapi/internal/clients/sns"
 	"time"
 
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,12 +56,6 @@ const (
 	errNewClient 				= "cannot create new Service"
 )
 
-// A NoOpService does nothing.
-type NoOpService struct{}
-
-var (
-	newNoOpService = func(_ []byte) (interface{}, error) { return &NoOpService{}, nil }
-)
 
 // SetupTopic adds a controller that reconciles Topic managed resources.
 func SetupTopic(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, poll  time.Duration) error {
@@ -70,9 +68,9 @@ func SetupTopic(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, po
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(snsv1alpha1.TopicGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
-			kube:         mgr.GetClient(),
-			usage:        resource.NewProviderConfigUsageTracker(mgr.GetClient(), &configv1alpha1.ProviderConfigUsage{}),
-			newServiceFn: newNoOpService}),
+			kube:        mgr.GetClient(),
+			//usage:       resource.NewProviderConfigUsageTracker(mgr.GetClient(), &v1beta1.ProviderConfigUsage{}),
+			newClientFn: sns.GetClient}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
@@ -86,9 +84,9 @@ func SetupTopic(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter, po
 // A connector is expected to produce an ExternalClient when its Connect method
 // is called.
 type connector struct {
-	kube         client.Client
-	usage        resource.Tracker
-	newServiceFn func(creds []byte) (interface{}, error)
+	kube        client.Client
+	//usage       resource.Tracker
+	newClientFn func(aws.Config) sns.Client
 }
 
 // Connect typically produces an ExternalClient by:
@@ -101,42 +99,42 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if !ok {
 		return nil, errors.New(errNotTopic)
 	}
-
+	/*
 	if err := c.usage.Track(ctx, mg); err != nil {
 		return nil, errors.Wrap(err, errTrackPCUsage)
 	}
+	*/
 
-	pc := &configv1alpha1.ProviderConfig{}
-	if err := c.kube.Get(ctx, types.NamespacedName{Name: cr.GetProviderConfigReference().Name}, pc); err != nil {
-		return nil, errors.Wrap(err, errGetPC)
-	}
-
-	cd := pc.Spec.Credentials
-	data, err := resource.CommonCredentialExtractor(ctx, cd.Source, c.kube, cd.CommonCredentialSelectors)
+	cfg, err := awsclient.GetConfig(ctx, c.kube, mg, cr.Spec.ForProvider.Region)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
+		return nil, err
 	}
-
-	svc, err := c.newServiceFn(data)
-	if err != nil {
-		return nil, errors.Wrap(err, errNewClient)
-	}
-
-	return &external{service: svc}, nil
+	return &external{c.newClientFn(*cfg), c.kube}, nil
 }
 
 // An ExternalClient observes, then either creates, updates, or deletes an
 // external resource to ensure it reflects the managed resource's desired state.
 type external struct {
-	// A 'client' used to connect to the external resource API. In practice this
-	// would be something like an AWS SDK client.
-	service interface{}
+	client sns.Client
+	kube   client.Client
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotTopic)
+	}
+
+	//Check existence of the Topic
+	snsAttributes, err := c.client.GetTopicAttributes(ctx,&awssns.GetTopicAttributesInput{
+		TopicArn: aws.String(meta.GetExternalName(cr)),
+	})
+
+	if err != nil {
+		var tnfe *awssnstypes.ResourceNotFoundException
+		if errors.As(err,&tnfe){
+			return managed.ExternalObservation{}, awsclient.Wrap(resource.Ignore(sns.IsNotFound, err), errGetQueueURLFailed)
+		}
 	}
 
 	// These fmt statements should be removed in the real implementation.
