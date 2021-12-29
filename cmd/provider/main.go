@@ -17,9 +17,9 @@ limitations under the License.
 package main
 
 import (
-	"provider-aws-controlapi/internal/controller"
 	"os"
 	"path/filepath"
+	"provider-aws-controlapi/internal/controller"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,7 +28,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 
-	"github.com/crossplane/provider-template/apis"
+	"provider-aws-controlapi/apis"
 )
 
 func main() {

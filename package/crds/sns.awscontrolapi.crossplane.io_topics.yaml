@@ -151,6 +151,11 @@ spec:
                     description: SubscriptionsPending – The number of subscriptions
                       pending confirmation for the topic.
                     type: integer
+                  topicArn:
+                    description: TopicArn – The topic's ARN
+                    type: string
+                required:
+                - topicArn
                 type: object
               conditions:
                 description: Conditions of the resource.

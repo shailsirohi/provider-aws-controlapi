@@ -1,0 +1,12 @@
+apiVersion: sns.awscontrolapi.crossplane.io/v1beta1
+kind: Topic
+metadata:
+  name: test-topic
+spec:
+  forProvider:
+    region: us-west-2
+    tags:
+      usage: test
+      owner: orchestration
+  providerConfigRef:
+    name: default

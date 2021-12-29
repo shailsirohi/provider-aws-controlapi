@@ -20,14 +20,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awssns "github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sns/types"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/google/go-cmp/cmp"
 	snsv1alpha1 "provider-aws-controlapi/apis/sns/v1alpha1"
 	awsclient "provider-aws-controlapi/internal/clients"
-	awssns "github.com/aws/aws-sdk-go-v2/service/sns"
 	"provider-aws-controlapi/internal/clients/sns"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -127,6 +128,14 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotTopic)
 	}
 
+	if strings.EqualFold(meta.GetExternalName(cr),cr.GetName()){
+		return managed.ExternalObservation{
+			ResourceExists: false,
+			ConnectionDetails: nil,
+			ResourceUpToDate: false,
+		},nil
+	}
+
 	//Check existence of the Topic and if exists, get all sns attributes values
 	topicAttributes, err := c.client.GetTopicAttributes(ctx,&awssns.GetTopicAttributesInput{
 		TopicArn: aws.String(meta.GetExternalName(cr)),
@@ -177,6 +186,7 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 }
 
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+	fmt.Printf("Inside Create function............................")
 	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotTopic)
@@ -197,7 +207,7 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	t := make([]types.Tag,len(cr.Spec.ForProvider.Tags))
 	i := 0
 	for k,v := range cr.Spec.ForProvider.Tags{
-		t[0] = types.Tag{
+		t[i] = types.Tag{
 			Key: aws.String(k),
 			Value: aws.String(v),
 		}
@@ -230,6 +240,7 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+	fmt.Printf("Inside Update function............................")
 	cr, ok := mg.(*snsv1alpha1.Topic)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotTopic)
