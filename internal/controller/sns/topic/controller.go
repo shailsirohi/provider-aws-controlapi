@@ -167,11 +167,11 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		// Return false when the external resource exists, but it not up to date
 		// with the desired managed resource state. This lets the managed
 		// resource reconciler know that it needs to call Update.
-		ResourceUpToDate: true,
+		ResourceUpToDate: sns.IsUpToDate(cr.Spec.ForProvider,topicAttributes.Attributes,topicTags.Tags),
 
 		// Return any details that may be required to connect to the external
 		// resource. These will be stored as the connection secret.
-		ConnectionDetails: managed.ConnectionDetails{},
+		ConnectionDetails: sns.GetConnectionDetails(*cr),
 	}, nil
 }
 

@@ -7,6 +7,8 @@ import (
 	awssns "github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sns/types"
 	"github.com/aws/smithy-go"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"provider-aws-controlapi/apis/sns/v1alpha1"
 	awsclient "provider-aws-controlapi/internal/clients"
 	"strconv"
@@ -114,5 +116,15 @@ func IsUpToDate(p v1alpha1.TopicParameters, attributes map[string]string, tags [
 		return false
 	}
 	return true
+}
+
+func GetConnectionDetails(in v1alpha1.Topic) managed.ConnectionDetails{
+	if in.Status.AtProvider.TopicArn == nil{
+		return nil
+	}
+	c := managed.ConnectionDetails{
+		xpv1.ResourceCredentialsSecretEndpointKey: []byte(aws.ToString(in.Status.AtProvider.TopicArn)),
+	}
+	return c
 }
 
