@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sns/types"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/google/go-cmp/cmp"
@@ -181,12 +182,50 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNotTopic)
 	}
 
+	cr.SetConditions(xpv1.Creating())
+
 	fmt.Printf("Creating: %+v", cr)
+
+	// Check if external name annotation is used or not
+	// if not object name is used as topic name
+	name := meta.GetExternalName(cr)
+	if name == ""{
+		name = cr.GetName()
+	}
+
+	// Converts Tags map to []types.Tag as required by CreateTopicInput
+	t := make([]types.Tag,len(cr.Spec.ForProvider.Tags))
+	i := 0
+	for k,v := range cr.Spec.ForProvider.Tags{
+		t[0] = types.Tag{
+			Key: aws.String(k),
+			Value: aws.String(v),
+		}
+		i++
+	}
+
+	resp, err := c.client.CreateTopic(ctx,&awssns.CreateTopicInput{
+		Attributes: sns.GenerateTopicAttributeMap(cr.Spec.ForProvider),
+		Tags: t,
+		Name: aws.String(name),
+	})
+
+	if err != nil{
+		return managed.ExternalCreation{},awsclient.Wrap(err,errCreateFailed)
+	}
+
+	// Changing the external name to full TopicArn as
+	// AWS APIs doesn't provide any option to get ARN using TopicName
+	// Neither do they treat TopicName as identifier
+	meta.SetExternalName(cr,*resp.TopicArn)
+	conn := managed.ConnectionDetails{
+		xpv1.ResourceCredentialsSecretEndpointKey: []byte(*resp.TopicArn),
+	}
 
 	return managed.ExternalCreation{
 		// Optionally return any details that may be required to connect to the
 		// external resource. These will be stored as the connection secret.
-		ConnectionDetails: managed.ConnectionDetails{},
+		ConnectionDetails: conn,
 	}, nil
 }
 
@@ -196,6 +235,8 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotTopic)
 	}
 
+	// Only the tags in SNS can be updated.
+	// All the other attributes are immutable
 	fmt.Printf("Updating: %+v", cr)
 
 	return managed.ExternalUpdate{

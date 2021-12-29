@@ -118,6 +118,7 @@ func IsUpToDate(p v1alpha1.TopicParameters, attributes map[string]string, tags [
 	return true
 }
 
+// GetConnectionDetails returns the Topic Arn which will be included in the secret
 func GetConnectionDetails(in v1alpha1.Topic) managed.ConnectionDetails{
 	if in.Status.AtProvider.TopicArn == nil{
 		return nil
@@ -126,5 +127,33 @@ func GetConnectionDetails(in v1alpha1.Topic) managed.ConnectionDetails{
 		xpv1.ResourceCredentialsSecretEndpointKey: []byte(aws.ToString(in.Status.AtProvider.TopicArn)),
 	}
 	return c
+}
+
+// GenerateTopicAttributeMap returns a map of all the topic attributes
+func GenerateTopicAttributeMap(in v1alpha1.TopicParameters) map[string]string{
+
+	attributes := make(map[string]string)
+	if in.Policy != nil{
+		attributes[v1alpha1.TopicPolicy] = aws.ToString(in.Policy)
+	}
+	if in.FifoTopic != nil{
+		attributes[v1alpha1.FifoTopic] = strconv.FormatBool(aws.ToBool(in.FifoTopic))
+	}
+	if in.DisplayName != nil{
+		attributes[v1alpha1.TopicDisplayName] = aws.ToString(in.DisplayName)
+	}
+	if in.KMSMasterKeyID != nil{
+		attributes[v1alpha1.TopicKMSMasterKeyID] = aws.ToString(in.KMSMasterKeyID)
+	}
+	if in.DeliveryPolicy != nil{
+		attributes[v1alpha1.TopicDeliveryPolicy] = aws.ToString(in.DeliveryPolicy)
+	}
+	if in.ContentBasedDeduplication != nil{
+		attributes[v1alpha1.FifoTopicContentBasedDeduplication] = strconv.FormatBool(aws.ToBool(in.ContentBasedDeduplication))
+	}
+	if len(attributes) == 0{
+		return nil
+	}
+	return attributes
 }
 
