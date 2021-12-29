@@ -134,20 +134,23 @@ spec:
               atProvider:
                 description: TopicObservation are the observable fields of an Topic.
                 properties:
-                  createdTimestamp:
-                    description: CreatedTimestamp is the time when the topic was created
-                    format: date-time
+                  effectiveDeliveryPolicy:
+                    description: EffectiveDeliveryPolicy – The JSON serialization
+                      of the effective delivery policy, taking system defaults into
+                      account.
                     type: string
-                  lastModifiedTimestamp:
-                    description: LastModifiedTimestamp - Returns the time when the
-                      topic was last changed.
-                    format: date-time
-                    type: string
-                  lastRequestToken:
-                    type: string
-                  topicArn:
-                    description: TopicArn is the ARN for created topic
-                    type: string
+                  subscriptionsConfirmed:
+                    description: SubscriptionsConfirmed – The number of confirmed
+                      subscriptions for the topic.
+                    type: integer
+                  subscriptionsDeleted:
+                    description: SubscriptionsDeleted – The number of deleted subscriptions
+                      for the topic.
+                    type: integer
+                  subscriptionsPending:
+                    description: SubscriptionsPending – The number of subscriptions
+                      pending confirmation for the topic.
+                    type: integer
                 type: object
               conditions:
                 description: Conditions of the resource.

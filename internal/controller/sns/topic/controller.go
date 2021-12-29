@@ -20,11 +20,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/google/go-cmp/cmp"
 	snsv1alpha1 "provider-aws-controlapi/apis/sns/v1alpha1"
 	awsclient "provider-aws-controlapi/internal/clients"
 	awssns "github.com/aws/aws-sdk-go-v2/service/sns"
-	awssnstypes "github.com/aws/aws-sdk-go-v2/service/sns/types"
 	"provider-aws-controlapi/internal/clients/sns"
 	"time"
 
@@ -125,17 +126,34 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotTopic)
 	}
 
-	//Check existence of the Topic
-	snsAttributes, err := c.client.GetTopicAttributes(ctx,&awssns.GetTopicAttributesInput{
+	//Check existence of the Topic and if exists, get all sns attributes values
+	topicAttributes, err := c.client.GetTopicAttributes(ctx,&awssns.GetTopicAttributesInput{
 		TopicArn: aws.String(meta.GetExternalName(cr)),
 	})
-
-	snsAttributes.Attributes[]
-
-
 	if err != nil {
 		return managed.ExternalObservation{}, awsclient.Wrap(resource.Ignore(sns.IsNotFound, err), errGetTopicAttributesFailed)
 	}
+
+	//Get all the tags on sns topic
+	topicTags, err := c.client.ListTagsForResource(ctx,&awssns.ListTagsForResourceInput{
+		ResourceArn: aws.String(meta.GetExternalName(cr)),
+	})
+	if err != nil {
+		return managed.ExternalObservation{}, awsclient.Wrap(err,errListTopicTagsFailed)
+	}
+
+	current := cr.Spec.ForProvider.DeepCopy()
+	// LateInitialize to update tags and topic parameters which are auto generated after topic creation
+	sns.LateInitialize(&cr.Spec.ForProvider,topicAttributes.Attributes,topicTags.Tags)
+	if !cmp.Equal(current, &cr.Spec.ForProvider){
+		err := c.kube.Update(ctx,cr)
+		if err != nil {
+			return managed.ExternalObservation{}, errors.Wrap(err, errKubeUpdateFailed)
+		}
+	}
+
+	cr.Status.SetConditions(xpv1.Available())
+	cr.Status.AtProvider = sns.GenerateObservation(topicAttributes.Attributes)
 
 	// These fmt statements should be removed in the real implementation.
 	fmt.Printf("Observing: %+v", cr)

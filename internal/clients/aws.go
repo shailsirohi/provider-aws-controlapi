@@ -3,19 +3,21 @@ package aws
 import (
 	"context"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/smithy-go"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/pkg/errors"
 	"gopkg.in/ini.v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"provider-aws-controlapi/apis/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/pkg/errors"
-	"github.com/aws/aws-sdk-go-v2/config"
+	"strconv"
 	"strings"
 )
 
@@ -284,6 +286,33 @@ func LateInitializeStringPtr(in *string, from *string) *string {
 	return from
 }
 
+// LateInitializeBoolPtr returns in if it's non-nil, otherwise returns from
+// which is the backup for the cases in is nil.
+func LateInitializeBoolPtr(in *bool, from *bool) *bool {
+	if in != nil {
+		return in
+	}
+	return from
+}
+
+// LateInitializeInt32Ptr returns in if it's non-nil, otherwise returns from
+// which is the backup for the cases in is nil.
+func LateInitializeInt32Ptr(in *int32, from *int32) *int32 {
+	if in != nil {
+		return in
+	}
+	return from
+}
+
+// LateInitializeInt64Ptr returns in if it's non-nil, otherwise returns from
+// which is the backup for the cases in is nil.
+func LateInitializeInt64Ptr(in *int64, from *int64) *int64 {
+	if in != nil {
+		return in
+	}
+	return from
+}
+
 // Wrap will remove the request-specific information from the error and only then
 // wrap it.
 func Wrap(err error, msg string) error {
@@ -299,4 +328,20 @@ func Wrap(err error, msg string) error {
 	return errors.Wrap(err, msg)
 }
 
+// StrToBool convert string to boolean value
+func StrToBoolPtr(s string) *bool{
+	b,e := strconv.ParseBool(s)
+	if e != nil{
+		return nil
+	}
+	return pointer.BoolPtr(b)
+}
+
+func StrToIntPtr(s string) *int{
+	i,e := strconv.Atoi(s)
+	if e != nil{
+		return nil
+	}
+	return pointer.IntPtr(i)
+}
 

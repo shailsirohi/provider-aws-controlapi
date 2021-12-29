@@ -23,6 +23,21 @@ import (
 	"reflect"
 )
 
+//Enum for topic attributes
+const(
+	TopicDeliveryPolicy = "DeliveryPolicy"
+	TopicDisplayName = "DisplayName"
+	TopicPolicy = "Policy"
+	FifoTopic = "FifoTopic"
+	TopicKMSMasterKeyID = "KmsMasterKeyId"
+	FifoTopicContentBasedDeduplication = "ContentBasedDeduplication"
+	TopicSubscriptionConfirmed = "SubscriptionsConfirmed"
+	TopicSubscriptionDeleted = "SubscriptionsDeleted"
+	TopicSubscriptionPending = "SubscriptionsPending"
+	TopicEffectiveDeliveryPolicy = "EffectiveDeliveryPolicy"
+	TopicArn = "TopicArn"
+)
+
 //TopicParameters are the configurable fields of an Topic.
 type TopicParameters struct {
 	Region string `json:"region"`
@@ -37,16 +52,24 @@ type TopicParameters struct {
 
 //TopicObservation are the observable fields of an Topic.
 type TopicObservation struct {
-	//TopicArn is the ARN for created topic
-	TopicArn string `json:"topicArn,omitempty"`
+	// TopicArn – The topic's ARN
+	TopicArn *string `json:"topicArn"`
 
-	LastRequestToken *string `json:"lastRequestToken,omitempty"`
+	// SubscriptionsConfirmed – The number of
+	// confirmed subscriptions for the topic.
+	SubscriptionsConfirmed *int `json:"subscriptionsConfirmed,omitempty"`
 
-	// CreatedTimestamp is the time when the topic was created
-	CreatedTimestamp *metav1.Time `json:"createdTimestamp,omitempty"`
+	// SubscriptionsDeleted – The number of
+	// deleted subscriptions for the topic.
+	SubscriptionsDeleted *int `json:"subscriptionsDeleted,omitempty"`
 
-	// LastModifiedTimestamp - Returns the time when the topic was last changed.
-	LastModifiedTimestamp *metav1.Time `json:"lastModifiedTimestamp,omitempty"`
+	// SubscriptionsPending – The number of
+	// subscriptions pending confirmation for the topic.
+	SubscriptionsPending *int `json:"subscriptionsPending,omitempty"`
+
+	// EffectiveDeliveryPolicy – The JSON serialization of the effective
+	// delivery policy, taking system defaults into account.
+	EffectiveDeliveryPolicy *string `json:"effectiveDeliveryPolicy,omitempty"`
 }
 
 
