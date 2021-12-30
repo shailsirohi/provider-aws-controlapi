@@ -25,6 +25,7 @@ type Client interface {
 	CreateTopic(ctx context.Context, params *awssns.CreateTopicInput, optFns ...func(*awssns.Options)) (*awssns.CreateTopicOutput, error)
 	DeleteTopic(ctx context.Context, params *awssns.DeleteTopicInput, optFns ...func(*awssns.Options)) (*awssns.DeleteTopicOutput, error)
 	GetTopicAttributes(ctx context.Context, params *awssns.GetTopicAttributesInput, optFns ...func(*awssns.Options)) (*awssns.GetTopicAttributesOutput, error)
+	SetTopicAttributes(ctx context.Context, params *awssns.SetTopicAttributesInput, optFns ...func(*awssns.Options)) (*awssns.SetTopicAttributesOutput, error)
 	TagResource(ctx context.Context, params *awssns.TagResourceInput, optFns ...func(*awssns.Options)) (*awssns.TagResourceOutput, error)
 	UntagResource(ctx context.Context, params *awssns.UntagResourceInput, optFns ...func(*awssns.Options)) (*awssns.UntagResourceOutput, error)
 	ListTagsForResource(ctx context.Context, params *awssns.ListTagsForResourceInput, optFns ...func(*awssns.Options)) (*awssns.ListTagsForResourceOutput, error)
@@ -155,5 +156,78 @@ func GenerateTopicAttributeMap(in v1alpha1.TopicParameters) map[string]string{
 		return nil
 	}
 	return attributes
+}
+
+// GetAttributeDiff returns the map of Topic attributes which are not
+// synced with external resource
+func GetAttributeDiff(in v1alpha1.TopicParameters, attributes map[string]string) map[string]string{
+	out := make(map[string]string)
+
+	if !strings.EqualFold(aws.ToString(in.Policy),attributes[v1alpha1.TopicPolicy]){
+		out[v1alpha1.TopicPolicy] = aws.ToString(in.Policy)
+	}
+	if aws.ToBool(in.FifoTopic) != aws.ToBool(awsclient.StrToBoolPtr(attributes[v1alpha1.FifoTopic])){
+		out[v1alpha1.FifoTopic] = strconv.FormatBool(aws.ToBool(in.FifoTopic))
+	}
+	if !strings.EqualFold(aws.ToString(in.DisplayName),attributes[v1alpha1.TopicDisplayName]){
+		out[v1alpha1.TopicDisplayName] = aws.ToString(in.DisplayName)
+	}
+	if !strings.EqualFold(aws.ToString(in.KMSMasterKeyID),attributes[v1alpha1.TopicKMSMasterKeyID]){
+		out[v1alpha1.TopicKMSMasterKeyID] = aws.ToString(in.KMSMasterKeyID)
+	}
+	if !strings.EqualFold(aws.ToString(in.DeliveryPolicy),attributes[v1alpha1.TopicDeliveryPolicy]){
+		out[v1alpha1.TopicDeliveryPolicy] = aws.ToString(in.DeliveryPolicy)
+	}
+	if aws.ToBool(in.ContentBasedDeduplication) != aws.ToBool(awsclient.StrToBoolPtr(attributes[v1alpha1.FifoTopicContentBasedDeduplication])){
+		out[v1alpha1.FifoTopicContentBasedDeduplication] = strconv.FormatBool(aws.ToBool(in.ContentBasedDeduplication))
+	}
+
+	if len(out) == 0{
+		return nil
+	}
+	return out
+}
+
+// GetDiffTags returns tags which are required to be added
+// or removed from external resource
+func GetDiffTags(in v1alpha1.TopicParameters,tags []types.Tag) (addTags []types.Tag, removeTags []types.Tag){
+
+	var managedResourceTags map[string]string
+	//Deep copy of managed resource tags
+	for k,v := range in.Tags{
+		managedResourceTags[k] = v
+	}
+
+	// Comparing external resource tags with managed resource tags
+	for _,v := range tags{
+		t,ok := in.Tags[aws.ToString(v.Key)]
+		if !ok{
+			removeTags = append(removeTags, v)
+		}
+		if strings.Compare(t,aws.ToString(v.Value)) != 0{
+			removeTags = append(removeTags, v)
+			addTags = append(addTags, types.Tag{
+				Key: v.Key,
+				Value: aws.String(t),
+			})
+		}
+		delete(managedResourceTags,aws.ToString(v.Key))
+	}
+
+	// Adding net new tags
+	for k,v := range managedResourceTags{
+		addTags = append(addTags, types.Tag{
+			Key: aws.String(k),
+			Value: aws.String(v),
+		})
+	}
+
+	if len(addTags) == 0{
+		addTags = nil
+	}
+	if len(removeTags) == 0{
+		removeTags = nil
+	}
+	return
 }
 

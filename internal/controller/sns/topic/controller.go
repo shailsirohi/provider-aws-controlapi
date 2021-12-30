@@ -246,14 +246,69 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotTopic)
 	}
 
-	// Only the tags in SNS can be updated.
-	// All the other attributes are immutable
+
 	fmt.Printf("Updating: %+v", cr)
+
+	// Check existence of the Topic and if exists, get all sns attributes values
+	topicAttributes, err := c.client.GetTopicAttributes(ctx,&awssns.GetTopicAttributesInput{
+		TopicArn: aws.String(meta.GetExternalName(cr)),
+	})
+	if err != nil {
+		return managed.ExternalUpdate{}, awsclient.Wrap(resource.Ignore(sns.IsNotFound, err), errGetTopicAttributesFailed)
+	}
+
+	// Identifying changed attributes and updating them in external resource
+	diffAttributes := sns.GetAttributeDiff(cr.Spec.ForProvider,topicAttributes.Attributes)
+	if diffAttributes != nil{
+		for k,v := range diffAttributes{
+			_, err := c.client.SetTopicAttributes(ctx,&awssns.SetTopicAttributesInput{
+				TopicArn: aws.String(meta.GetExternalName(cr)),
+				AttributeName: &k,
+				AttributeValue: &v,
+			})
+			if err != nil{
+				return managed.ExternalUpdate{},awsclient.Wrap(err,errKubeUpdateFailed)
+			}
+		}
+	}
+
+	// Getting all the tags for the external resource
+	topicTags, err := c.client.ListTagsForResource(ctx,&awssns.ListTagsForResourceInput{
+		ResourceArn: aws.String(meta.GetExternalName(cr)),
+	})
+	if err != nil {
+		return managed.ExternalUpdate{}, awsclient.Wrap(err,errListTopicTagsFailed)
+	}
+
+	// Identifying changes in tags and updating external resource accordingly
+	addTags,removeTags := sns.GetDiffTags(cr.Spec.ForProvider,topicTags.Tags)
+	if removeTags != nil{
+		_, err := c.client.TagResource(ctx,&awssns.TagResourceInput{
+			ResourceArn: aws.String(meta.GetExternalName(cr)),
+			Tags: removeTags,
+		})
+		if err != nil{
+			return managed.ExternalUpdate{},awsclient.Wrap(err,errKubeUpdateFailed)
+		}
+	}
+	if addTags != nil{
+		_, err := c.client.TagResource(ctx,&awssns.TagResourceInput{
+			ResourceArn: aws.String(meta.GetExternalName(cr)),
+			Tags: addTags,
+		})
+		if err != nil{
+			return managed.ExternalUpdate{},awsclient.Wrap(err,errKubeUpdateFailed)
+		}
+	}
+
+	conn := managed.ConnectionDetails{
+		xpv1.ResourceCredentialsSecretEndpointKey: []byte(meta.GetExternalName(cr)),
+	}
 
 	return managed.ExternalUpdate{
 		// Optionally return any details that may be required to connect to the
 		// external resource. These will be stored as the connection secret.
-		ConnectionDetails: managed.ConnectionDetails{},
+		ConnectionDetails: conn,
 	}, nil
 }
 
@@ -264,6 +319,16 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 	}
 
 	fmt.Printf("Deleting: %+v", cr)
+
+	cr.SetConditions(xpv1.Deleting())
+
+	_, err := c.client.DeleteTopic(ctx,&awssns.DeleteTopicInput{
+		TopicArn: aws.String(meta.GetExternalName(cr)),
+	})
+
+	if err != nil{
+		return awsclient.Wrap(resource.Ignore(sns.IsNotFound,err),errDeleteFailed)
+	}
 
 	return nil
 }
