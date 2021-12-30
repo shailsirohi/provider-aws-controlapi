@@ -190,9 +190,10 @@ func GetAttributeDiff(in v1alpha1.TopicParameters, attributes map[string]string)
 
 // GetDiffTags returns tags which are required to be added
 // or removed from external resource
-func GetDiffTags(in v1alpha1.TopicParameters,tags []types.Tag) (addTags []types.Tag, removeTags []types.Tag){
+func GetDiffTags(in v1alpha1.TopicParameters,tags []types.Tag) (addTags []types.Tag, removeTags []string){
 
-	var managedResourceTags map[string]string
+	managedResourceTags := make(map[string]string)
+
 	//Deep copy of managed resource tags
 	for k,v := range in.Tags{
 		managedResourceTags[k] = v
@@ -202,10 +203,9 @@ func GetDiffTags(in v1alpha1.TopicParameters,tags []types.Tag) (addTags []types.
 	for _,v := range tags{
 		t,ok := in.Tags[aws.ToString(v.Key)]
 		if !ok{
-			removeTags = append(removeTags, v)
-		}
-		if strings.Compare(t,aws.ToString(v.Value)) != 0{
-			removeTags = append(removeTags, v)
+			removeTags = append(removeTags, aws.ToString(v.Key))
+		}else if strings.Compare(t,aws.ToString(v.Value)) != 0{
+			removeTags = append(removeTags, aws.ToString(v.Key))
 			addTags = append(addTags, types.Tag{
 				Key: v.Key,
 				Value: aws.String(t),

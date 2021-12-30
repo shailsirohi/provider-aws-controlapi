@@ -5,8 +5,10 @@ metadata:
 spec:
   forProvider:
     region: us-west-2
+    displayName: testtopic
     tags:
       usage: test
       owner: orchestration
+      namespace: system
   providerConfigRef:
     name: default

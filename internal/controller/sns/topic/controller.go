@@ -194,8 +194,6 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	cr.SetConditions(xpv1.Creating())
 
-	fmt.Printf("Creating: %+v", cr)
-
 	// Check if external name annotation is used or not
 	// if not object name is used as topic name
 	name := meta.GetExternalName(cr)
@@ -203,7 +201,7 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		name = cr.GetName()
 	}
 
-	// Converts Tags map to []types.Tag as required by CreateTopicInput
+	// Convert Tags map to []types.Tag as required by CreateTopicInput
 	t := make([]types.Tag,len(cr.Spec.ForProvider.Tags))
 	i := 0
 	for k,v := range cr.Spec.ForProvider.Tags{
@@ -283,9 +281,9 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	// Identifying changes in tags and updating external resource accordingly
 	addTags,removeTags := sns.GetDiffTags(cr.Spec.ForProvider,topicTags.Tags)
 	if removeTags != nil{
-		_, err := c.client.TagResource(ctx,&awssns.TagResourceInput{
+		_, err := c.client.UntagResource(ctx,&awssns.UntagResourceInput{
 			ResourceArn: aws.String(meta.GetExternalName(cr)),
-			Tags: removeTags,
+			TagKeys: removeTags,
 		})
 		if err != nil{
 			return managed.ExternalUpdate{},awsclient.Wrap(err,errKubeUpdateFailed)
